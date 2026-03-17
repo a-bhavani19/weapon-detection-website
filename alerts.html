@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Alert History</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #111;
+            color: white;
+            padding: 30px;
+        }
+        h1 {
+            color: red;
+            text-align: center;
+        }
+        .alert-box {
+            background: #222;
+            border-left: 6px solid red;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+        }
+        .no-alerts {
+            text-align: center;
+            color: gray;
+        }
+        a {
+            color: #00ffcc;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+<h1>🚨 Weapon Detection Alerts</h1>
+
+{% if alerts %}
+    {% for alert in alerts %}
+        <div class="alert-box">
+            {{ alert }}
+        </div>
+    {% endfor %}
+{% else %}
+    <p class="no-alerts">No alerts detected yet.</p>
+{% endif %}
+
+<br>
+<a href="{{ url_for('dashboard') }}">⬅ Back to Dashboard</a>
+
+</body>
+</html>
