@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security Dashboard</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="top-bar">
+    <h1>SECURITY SURVEILLANCE</h1>
+    <a href="/logout" class="logout-btn">Logout</a>
+</div>
+
+<div class="container">
+    <div class="panel camera-panel">
+        <h2>Live Camera Feed</h2>
+        <a href="/camera" class="btn">▶ Open Camera</a>
+    </div>
+
+    <!-- ==== Replaced Upload Panel ==== -->
+    <div class="panel upload-panel">
+        <h2>Upload Image / Video</h2>
+        <form id="upload-form" action="/upload" method="POST" enctype="multipart/form-data">
+            <input type="file" name="file" id="file-input" accept="image/*,video/*" required>
+            <button type="submit" class="btn">Upload & Detect</button>
+        </form>
+        <p style="margin-top:10px;">Detection Result:</p>
+        <div id="result-container" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="panel history-panel">
+        <h2>Detection History</h2>
+        <a href="/history" class="btn">📊 View History</a>
+    </div>
+
+    <div class="panel alerts-panel">
+        <h2>Alerts</h2>
+        <a href="/alerts" class="btn">🚨 View Alerts</a>
+    </div>
+
+    <div class="panel settings-panel">
+        <h2>Settings</h2>
+        <a href="/settings" class="btn">⚙️ Configure</a>
+    </div>
+
+    <div class="panel about-panel">
+        <h2>About</h2>
+        <a href="/about" class="btn">ℹ️ Info</a>
+    </div>
+    <div class="panel demo-panel">
+        <h2>Live Model Comparison</h2>
+        <a href="/demo" class="btn">🎯 Watch Live Demo</a>
+    </div>
+</div>
+
+<script>
+document.getElementById('upload-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+
+    fetch('/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.text())
+    .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const img = doc.querySelector('img');
+        if (img) {
+            document.getElementById('result-container').innerHTML = 
+                `<img src="${img.src}" style="max-width:100%; border:2px solid red; margin-top:10px;">`;
+        }
+    })
+    .catch(err => console.error('Upload error:', err));
+});
+</script>
+</body>
+</html>
