@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Algorithm Comparison</title>
+
+<style>
+table {
+border-collapse: collapse;
+width: 80%;
+margin: auto;
+}
+
+th, td {
+border: 1px solid black;
+padding: 10px;
+text-align: center;
+}
+
+th {
+background-color: #333;
+color: white;
+}
+
+</style>
+</head>
+
+<body>
+
+<h2 style="text-align:center">Weapon Detection Algorithm Comparison</h2>
+
+<table>
+
+<tr>
+<th>Algorithm</th>
+<th>Accuracy (%)</th>
+<th>Precision</th>
+<th>Recall</th>
+<th>FPS</th>
+</tr>
+
+{% for row in results %}
+
+<tr>
+<td>{{ row["Algorithm"] }}</td>
+<td>{{ row["Accuracy (%)"] }}</td>
+<td>{{ row["Precision"] }}</td>
+<td>{{ row["Recall"] }}</td>
+<td>{{ row["FPS"] }}</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+</body>
+</html>
