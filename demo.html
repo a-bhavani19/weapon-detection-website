@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Detection Demo | Weapon Detection CCTV</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #060a10;
+    --panel: #0b1220;
+    --cyan: #00ffe7;
+    --red: #ff2233;
+    --gold: #ffd700;
+    --orange: #ff8c00;
+    --purple: #b46aff;
+    --border: rgba(0,255,231,0.12);
+    --text: #c8d8e8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px);
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,231,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,231,0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page-wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+  }
+
+  /* HEADER */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 36px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .back-link {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--cyan);
+    text-decoration: none;
+    transition: letter-spacing 0.2s;
+  }
+  .back-link:hover { letter-spacing: 5px; }
+
+  .header-center { text-align: center; flex: 1; }
+
+  .header-center .tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: #4a6a7a;
+    margin-bottom: 6px;
+  }
+
+  .header-center h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(18px, 3vw, 32px);
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 2px;
+  }
+
+  .header-center h1 span { color: var(--cyan); text-shadow: 0 0 16px var(--cyan); }
+
+  .live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--red);
+  }
+
+  .live-dot {
+    width: 8px; height: 8px;
+    background: var(--red);
+    border-radius: 50%;
+    animation: blink 1s ease-in-out infinite;
+    box-shadow: 0 0 8px var(--red);
+  }
+
+  @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+  /* DESCRIPTION BAR */
+  .desc-bar {
+    background: rgba(0,255,231,0.04);
+    border: 1px solid rgba(0,255,231,0.1);
+    border-radius: 6px;
+    padding: 14px 20px;
+    margin-bottom: 28px;
+    font-size: 14px;
+    color: #6a8a9a;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  .desc-bar strong { color: var(--cyan); }
+
+  /* 4-PANEL GRID */
+  .panels-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  @media (max-width: 900px) { .panels-grid { grid-template-columns: 1fr; } }
+
+  /* CAMERA PANEL */
+  .cam-panel {
+    background: var(--panel);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.07);
+    position: relative;
+    transition: border-color 0.3s;
+  }
+
+  .cam-panel.ours {
+    border-color: rgba(0,255,231,0.3);
+    box-shadow: 0 0 30px rgba(0,255,231,0.06);
+  }
+
+  /* Panel header */
+  .panel-header {
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .panel-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  .panel-badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 3px 8px;
+    border-radius: 3px;
+  }
+
+  /* Colour themes per panel */
+  .haar-panel .panel-header { background: rgba(255,100,0,0.08); border-bottom-color: rgba(255,100,0,0.15); }
+  .haar-panel .panel-title { color: var(--orange); }
+  .haar-panel .panel-badge { background: rgba(255,100,0,0.12); color: var(--orange); border: 1px solid rgba(255,100,0,0.2); }
+
+  .hog-panel .panel-header { background: rgba(255,34,51,0.08); border-bottom-color: rgba(255,34,51,0.15); }
+  .hog-panel .panel-title { color: #ff6060; }
+  .hog-panel .panel-badge { background: rgba(255,34,51,0.12); color: #ff6060; border: 1px solid rgba(255,34,51,0.2); }
+
+  .rcnn-panel .panel-header { background: rgba(180,106,255,0.08); border-bottom-color: rgba(180,106,255,0.15); }
+  .rcnn-panel .panel-title { color: var(--purple); }
+  .rcnn-panel .panel-badge { background: rgba(180,106,255,0.12); color: var(--purple); border: 1px solid rgba(180,106,255,0.2); }
+
+  .yolo-panel .panel-header { background: rgba(0,255,231,0.08); border-bottom-color: rgba(0,255,231,0.2); }
+  .yolo-panel .panel-title { color: var(--cyan); }
+  .yolo-panel .panel-badge { background: rgba(0,255,231,0.12); color: var(--cyan); border: 1px solid rgba(0,255,231,0.25); }
+
+  /* Feed area */
+  .feed-area {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/10;
+    background: #020608;
+    overflow: hidden;
+  }
+
+  .feed-area img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Canvas overlay for simulated detections */
+  .feed-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Frozen overlay for R-CNN */
+  .freeze-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .freeze-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--purple);
+    background: rgba(0,0,0,0.8);
+    padding: 6px 14px;
+    border-radius: 4px;
+    border: 1px solid rgba(180,106,255,0.3);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .freeze-label.show { opacity: 1; }
+
+  /* Simulated detection boxes on canvas panels */
+  .sim-box-overlay {
+    position: absolute;
+    border: 2px solid;
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  .sim-label-overlay {
+    position: absolute;
+    top: -22px;
+    left: -2px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    padding: 2px 6px;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+
+  /* No alert strip */
+  .no-alert-strip {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(255,100,0,0.15);
+    border-top: 1px solid rgba(255,100,0,0.3);
+    padding: 5px 10px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--orange);
+    text-align: center;
+  }
+
+  .alert-strip {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(255,34,51,0.2);
+    border-top: 1px solid rgba(255,34,51,0.5);
+    padding: 5px 10px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--red);
+    text-align: center;
+    animation: alertPulse 1s ease-in-out infinite;
+  }
+
+  @keyframes alertPulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+
+  /* Stats bar below feed */
+  .stats-bar {
+    padding: 10px 14px;
+    display: flex;
+    gap: 16px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .stat-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: #3a5a6a;
+    text-transform: uppercase;
+  }
+
+  .stat-value {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    font-weight: bold;
+  }
+
+  /* weakness tag */
+  .weakness-tag {
+    margin-left: auto;
+    align-self: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    border-radius: 3px;
+    background: rgba(255,34,51,0.1);
+    color: #ff6060;
+    border: 1px solid rgba(255,34,51,0.2);
+  }
+
+  .strength-tag {
+    margin-left: auto;
+    align-self: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    border-radius: 3px;
+    background: rgba(0,255,231,0.1);
+    color: var(--cyan);
+    border: 1px solid rgba(0,255,231,0.2);
+  }
+
+  /* LOG PANEL */
+  .log-section {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+
+  .log-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: #fff;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .log-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  .log-entries {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 180px;
+    overflow-y: auto;
+  }
+
+  .log-entry {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: logSlide 0.3s ease;
+  }
+
+  @keyframes logSlide { from{opacity:0; transform:translateX(-10px);} to{opacity:1; transform:translateX(0);} }
+
+  .log-entry.yolo-log { background: rgba(0,255,231,0.06); border-left: 3px solid var(--cyan); color: #9adaea; }
+  .log-entry.haar-log { background: rgba(255,100,0,0.06); border-left: 3px solid var(--orange); color: #ffb060; }
+  .log-entry.hog-log  { background: rgba(255,34,51,0.06); border-left: 3px solid #ff4444; color: #ff8888; }
+  .log-entry.rcnn-log { background: rgba(180,106,255,0.06); border-left: 3px solid var(--purple); color: #d0a0ff; }
+
+  .log-time { color: #3a5a6a; flex-shrink: 0; }
+
+  /* Simulated detection overlays */
+  .haar-fp {
+    position: absolute;
+    border: 2px solid var(--orange);
+    border-radius: 2px;
+    pointer-events: none;
+    transition: all 0.5s;
+  }
+
+  .haar-fp-label {
+    position: absolute;
+    top: -20px;
+    left: 0;
+    background: var(--orange);
+    color: #000;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    padding: 1px 5px;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+
+  .hog-detection {
+    position: absolute;
+    border: 1px dashed rgba(255,60,60,0.6);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+
+  .hog-detection-label {
+    position: absolute;
+    top: -18px;
+    left: 0;
+    color: #ff6060;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    padding: 1px 5px;
+    letter-spacing: 1px;
+    background: rgba(0,0,0,0.7);
+    white-space: nowrap;
+  }
+
+  /* RCNN loading spinner */
+  .rcnn-processing {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+
+  .rcnn-processing.show { opacity: 1; }
+
+  .rcnn-spinner {
+    width: 32px; height: 32px;
+    border: 2px solid rgba(180,106,255,0.2);
+    border-top-color: var(--purple);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .rcnn-processing-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--purple);
+  }
+
+  /* CORNER watermark */
+  .cam-watermark {
+    position: absolute;
+    top: 8px;
+    left: 10px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.3);
+    pointer-events: none;
+  }
+
+  .cam-timestamp {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.3);
+    pointer-events: none;
+  }
+
+  /* OURS best badge */
+  .best-badge {
+    position: absolute;
+    top: 36px;
+    right: 10px;
+    background: rgba(0,255,231,0.15);
+    border: 1px solid rgba(0,255,231,0.3);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--cyan);
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* Summary row */
+  .summary-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  @media (max-width: 700px) { .summary-row { grid-template-columns: 1fr 1fr; } }
+
+  .summary-card {
+    background: var(--panel);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid rgba(255,255,255,0.06);
+    text-align: center;
+  }
+
+  .summary-card.winner {
+    border-color: rgba(0,255,231,0.25);
+    background: linear-gradient(135deg, #0b1a2a, #0b1220);
+  }
+
+  .summary-card .algo-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .summary-card .verdict {
+    font-size: 12px;
+    color: #6a8a9a;
+    line-height: 1.4;
+  }
+
+  .summary-card .verdict strong { display: block; font-size: 13px; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <a href="/dashboard" class="back-link">← DASHBOARD</a>
+    <div class="header-center">
+      <div class="tag">LIVE ALGORITHM COMPARISON</div>
+      <h1>4-MODEL <span>DETECTION DEMO</span></h1>
+    </div>
+    <div class="live-indicator">
+      <div class="live-dot"></div>
+      LIVE
+    </div>
+  </div>
+
+  <!-- DESCRIPTION -->
+  <div class="desc-bar">
+    Watch all 4 algorithms run on the <strong>same scene</strong> in real time. Only <strong>YOLOv8 (our system)</strong> correctly detects weapons, fires alerts, and runs smoothly. The others miss detections, produce false positives, or freeze entirely.
+  </div>
+
+  <!-- 4 PANELS -->
+  <div class="panels-grid">
+
+    <!-- PANEL 1: HAAR CASCADE -->
+    <div class="cam-panel haar-panel">
+      <div class="panel-header">
+        <span class="panel-title">HAAR CASCADE</span>
+        <span class="panel-badge">RANK #3 — POOR</span>
+      </div>
+      <div class="feed-area" id="haar-feed">
+        <img src="{{ url_for('video_feed') }}" alt="feed" id="haar-img">
+        <div class="cam-watermark">CAM-01 / HAAR</div>
+        <div class="cam-timestamp" id="haar-ts"></div>
+        <!-- Simulated false positive boxes injected by JS -->
+        <div id="haar-boxes"></div>
+        <div class="no-alert-strip">⚠ NO WEAPON ALERT SYSTEM — MISSES REAL THREATS</div>
+      </div>
+      <div class="stats-bar">
+        <div class="stat">
+          <span class="stat-label">Accuracy</span>
+          <span class="stat-value" style="color:var(--orange);">38.7%</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">FPS</span>
+          <span class="stat-value" style="color:var(--orange);">25</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Alerts</span>
+          <span class="stat-value" style="color:#ff4444;">NONE</span>
+        </div>
+        <div class="weakness-tag">FALSE POSITIVES</div>
+      </div>
+    </div>
+
+    <!-- PANEL 2: HOG + SVM -->
+    <div class="cam-panel hog-panel">
+      <div class="panel-header">
+        <span class="panel-title">HOG + SVM</span>
+        <span class="panel-badge">RANK #2 — FAIR</span>
+      </div>
+      <div class="feed-area" id="hog-feed">
+        <img src="{{ url_for('video_feed') }}" alt="feed" id="hog-img">
+        <div class="cam-watermark">CAM-01 / HOG</div>
+        <div class="cam-timestamp" id="hog-ts"></div>
+        <div id="hog-boxes"></div>
+        <div class="no-alert-strip">⚠ NO RED BOX ALERTS — DETECTS WRONG OBJECTS</div>
+      </div>
+      <div class="stats-bar">
+        <div class="stat">
+          <span class="stat-label">Accuracy</span>
+          <span class="stat-value" style="color:#ff6060;">52.1%</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">FPS</span>
+          <span class="stat-value" style="color:#ff6060;">18</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Alerts</span>
+          <span class="stat-value" style="color:#ff4444;">NONE</span>
+        </div>
+        <div class="weakness-tag">MISCLASSIFIES WEAPONS</div>
+      </div>
+    </div>
+
+    <!-- PANEL 3: FASTER R-CNN -->
+    <div class="cam-panel rcnn-panel">
+      <div class="panel-header">
+        <span class="panel-title">FASTER R-CNN</span>
+        <span class="panel-badge">RANK #2 — SLOW</span>
+      </div>
+      <div class="feed-area" id="rcnn-feed">
+        <img src="{{ url_for('video_feed') }}" alt="feed" id="rcnn-img" style="opacity:0.6;">
+        <div class="cam-watermark">CAM-01 / R-CNN</div>
+        <div class="cam-timestamp" id="rcnn-ts"></div>
+        <div id="rcnn-boxes"></div>
+        <div class="rcnn-processing" id="rcnn-processing">
+          <div class="rcnn-spinner"></div>
+          <div class="rcnn-processing-text">PROCESSING REGIONS...</div>
+        </div>
+        <div class="no-alert-strip">⚠ 7 FPS — FREEZES EVERY ~4 SECONDS</div>
+      </div>
+      <div class="stats-bar">
+        <div class="stat">
+          <span class="stat-label">Accuracy</span>
+          <span class="stat-value" style="color:var(--purple);">73.2%</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">FPS</span>
+          <span class="stat-value" style="color:#ff4444;">7</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">GPU</span>
+          <span class="stat-value" style="color:#ff4444;">REQUIRED</span>
+        </div>
+        <div class="weakness-tag">TOO SLOW FOR CCTV</div>
+      </div>
+    </div>
+
+    <!-- PANEL 4: YOLOV8 — OURS -->
+    <div class="cam-panel yolo-panel ours">
+      <div class="panel-header">
+        <span class="panel-title">★ YOLOv8s — OUR SYSTEM</span>
+        <span class="panel-badge">RANK #1 — BEST</span>
+      </div>
+      <div class="feed-area" id="yolo-feed">
+        <img src="{{ url_for('video_feed') }}" alt="Live YOLO Feed" id="yolo-img">
+        <div class="cam-watermark">CAM-01 / YOLOv8</div>
+        <div class="cam-timestamp" id="yolo-ts"></div>
+        <div class="best-badge">★ ACTIVE DETECTION</div>
+        <div class="alert-strip" id="yolo-alert-strip">🚨 WEAPON DETECTION ACTIVE — REAL-TIME ALERTS ENABLED</div>
+      </div>
+      <div class="stats-bar">
+        <div class="stat">
+          <span class="stat-label">Accuracy</span>
+          <span class="stat-value" style="color:var(--cyan);">78.4%</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">FPS</span>
+          <span class="stat-value" style="color:var(--cyan);">45</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Alerts</span>
+          <span class="stat-value" style="color:var(--cyan);">LIVE</span>
+        </div>
+        <div class="strength-tag">WEAPON-TRAINED MODEL</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- DETECTION LOG -->
+  <div class="log-section">
+    <div class="log-title">REAL-TIME DETECTION LOG</div>
+    <div class="log-entries" id="log-entries">
+      <div class="log-entry rcnn-log"><span class="log-time">--:--:--</span> [R-CNN] Processing frame... (high latency)</div>
+      <div class="log-entry haar-log"><span class="log-time">--:--:--</span> [Haar] Detected: "face" at (120,80) — incorrect object class</div>
+      <div class="log-entry hog-log"><span class="log-time">--:--:--</span> [HOG+SVM] Detected: "person" — weapon not classified separately</div>
+      <div class="log-entry yolo-log"><span class="log-time">--:--:--</span> [YOLOv8] System ready — weapon detection active</div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="algo-name" style="color:var(--orange);">HAAR CASCADE</div>
+      <div class="verdict">
+        <strong style="color:#ff4444;">FAILS</strong>
+        Detects wrong objects, no alert system, misses real weapons
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="algo-name" style="color:#ff6060;">HOG + SVM</div>
+      <div class="verdict">
+        <strong style="color:#ff8844;">INADEQUATE</strong>
+        No weapon-specific training, misclassifies objects as people
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="algo-name" style="color:var(--purple);">FASTER R-CNN</div>
+      <div class="verdict">
+        <strong style="color:#cc88ff;">TOO SLOW</strong>
+        Accurate but freezes — misses real-time events in live CCTV
+      </div>
+    </div>
+    <div class="summary-card winner">
+      <div class="algo-name" style="color:var(--cyan);">★ YOLOv8s</div>
+      <div class="verdict">
+        <strong style="color:var(--cyan);">WINNER</strong>
+        Real-time, weapon-trained, instant alerts, runs on any laptop
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── TIMESTAMPS ──
+  function getTimestamp() {
+    return new Date().toLocaleTimeString('en-GB', {hour12: false});
+  }
+
+  function updateTimestamps() {
+    const ts = getTimestamp();
+    document.getElementById('haar-ts').textContent = ts;
+    document.getElementById('hog-ts').textContent = ts;
+    document.getElementById('yolo-ts').textContent = ts;
+    // RCNN timestamp only updates slowly
+  }
+  setInterval(updateTimestamps, 1000);
+  updateTimestamps();
+
+  // ── RCNN FREEZE SIMULATION ──
+  // Freezes the RCNN feed every 4 seconds to show 7FPS slowness
+  const rcnnImg = document.getElementById('rcnn-img');
+  const rcnnProcessing = document.getElementById('rcnn-processing');
+  const rcnnTs = document.getElementById('rcnn-ts');
+  let rcnnFrozen = false;
+  let rcnnSrc = '';
+
+  function simulateRCNN() {
+    // Freeze: stop src updates, show spinner
+    rcnnImg.style.opacity = '0.3';
+    rcnnProcessing.classList.add('show');
+    rcnnFrozen = true;
+    addLog('rcnn-log', '[R-CNN] Processing ~2000 region proposals... GPU at 98%');
+
+    setTimeout(() => {
+      rcnnImg.style.opacity = '0.7';
+      rcnnProcessing.classList.remove('show');
+      rcnnTs.textContent = getTimestamp();
+      rcnnFrozen = false;
+      addLog('rcnn-log', '[R-CNN] Frame processed — 143ms latency (7 FPS max)');
+    }, 3500);
+  }
+
+  // Run RCNN freeze every 5 seconds
+  setInterval(simulateRCNN, 5000);
+
+  // ── HAAR FALSE POSITIVE SIMULATION ──
+  // Shows random bounding boxes detecting wrong things
+  const haarBoxes = document.getElementById('haar-boxes');
+  const haarFeed = document.getElementById('haar-feed');
+
+  const haarFakeDetections = [
+    { label: 'FACE 0.71', x: '15%', y: '20%', w: '22%', h: '30%' },
+    { label: 'PERSON 0.58', x: '55%', y: '30%', w: '20%', h: '35%' },
+    { label: 'FACE 0.63', x: '30%', y: '10%', w: '18%', h: '25%' },
+    { label: 'UNKNOWN 0.41', x: '60%', y: '50%', w: '25%', h: '30%' },
+    { label: 'FACE 0.55', x: '10%', y: '50%', w: '20%', h: '28%' },
+  ];
+
+  let haarIdx = 0;
+  function simulateHaar() {
+    haarBoxes.innerHTML = '';
+    // Show 1-2 random wrong detections
+    const count = Math.floor(Math.random() * 2) + 1;
+    for (let i = 0; i < count; i++) {
+      const d = haarFakeDetections[(haarIdx + i) % haarFakeDetections.length];
+      const box = document.createElement('div');
+      box.className = 'haar-fp';
+      box.style.cssText = `left:${d.x}; top:${d.y}; width:${d.w}; height:${d.h}; border-color:var(--orange);`;
+      const lbl = document.createElement('div');
+      lbl.className = 'haar-fp-label';
+      lbl.textContent = d.label;
+      box.appendChild(lbl);
+      haarBoxes.appendChild(box);
+    }
+    haarIdx = (haarIdx + 1) % haarFakeDetections.length;
+    addLog('haar-log', `[Haar] Detected: "${haarFakeDetections[haarIdx].label.split(' ')[0].toLowerCase()}" — not a weapon, no alert triggered`);
+  }
+
+  setInterval(simulateHaar, 2500);
+  simulateHaar();
+
+  // ── HOG FALSE/MISSED DETECTION SIMULATION ──
+  const hogBoxes = document.getElementById('hog-boxes');
+
+  const hogFakeDetections = [
+    { label: 'PERSON 0.62', x: '20%', y: '25%', w: '25%', h: '40%' },
+    { label: 'PERSON 0.48', x: '55%', y: '20%', w: '20%', h: '38%' },
+    { label: 'OBJECT? 0.31', x: '40%', y: '40%', w: '18%', h: '22%' },
+  ];
+
+  let hogShowDetection = true;
+  function simulateHOG() {
+    hogBoxes.innerHTML = '';
+    // Randomly miss detections to show unreliability
+    hogShowDetection = Math.random() > 0.35;
+    if (hogShowDetection) {
+      const d = hogFakeDetections[Math.floor(Math.random() * hogFakeDetections.length)];
+      const box = document.createElement('div');
+      box.className = 'hog-detection';
+      box.style.cssText = `left:${d.x}; top:${d.y}; width:${d.w}; height:${d.h};`;
+      const lbl = document.createElement('div');
+      lbl.className = 'hog-detection-label';
+      lbl.textContent = d.label;
+      box.appendChild(lbl);
+      hogBoxes.appendChild(box);
+      addLog('hog-log', `[HOG+SVM] Detected: "${d.label.split(' ')[0].toLowerCase()}" — weapon class not recognised`);
+    } else {
+      addLog('hog-log', '[HOG+SVM] No detection — missed object due to angle/lighting variation');
+    }
+  }
+
+  setInterval(simulateHOG, 3000);
+  simulateHOG();
+
+  // ── LOG SYSTEM ──
+  const logEntries = document.getElementById('log-entries');
+
+  function addLog(cls, msg) {
+    const entry = document.createElement('div');
+    entry.className = `log-entry ${cls}`;
+    const time = document.createElement('span');
+    time.className = 'log-time';
+    time.textContent = getTimestamp();
+    entry.appendChild(time);
+    entry.appendChild(document.createTextNode(' ' + msg));
+    logEntries.prepend(entry);
+    // Keep only last 20 entries
+    while (logEntries.children.length > 20) {
+      logEntries.removeChild(logEntries.lastChild);
+    }
+  }
+
+  // YOLOv8 periodic log updates
+  const yoloLogs = [
+    '[YOLOv8] ✓ Weapon detection active — scanning at 45 FPS',
+    '[YOLOv8] ✓ Frame processed — no weapon detected',
+    '[YOLOv8] ✓ Person detected (0.91 conf) — monitoring',
+    '[YOLOv8] ✓ Clear frame — system nominal',
+  ];
+
+  let yoloLogIdx = 0;
+  setInterval(() => {
+    addLog('yolo-log', yoloLogs[yoloLogIdx % yoloLogs.length]);
+    yoloLogIdx++;
+  }, 2000);
+</script>
+</body>
+</html>
