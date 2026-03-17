@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Register</title>
+<style>
+body { margin:0; height:100vh; background:#0a0f1c; display:flex; justify-content:center; align-items:center; font-family:Arial, sans-serif; color:white;}
+.box { width:380px; padding:30px; background:#111; border-radius:10px; box-shadow:0 0 30px #00e5ff44; }
+h2{color:#00e5ff; text-align:center; margin-bottom:10px;}
+input{width:100%; padding:12px; margin-bottom:15px; border-radius:6px; border:none; background:#222; color:white;}
+button{width:100%; padding:12px; border:none; border-radius:6px; background:#00e5ff; color:#111; font-weight:bold; cursor:pointer;}
+button:hover{filter:brightness(1.2);}
+.error{background:#ff003333;color:#ff6b6b;padding:8px;border-radius:5px;margin-bottom:10px;text-align:center;}
+</style>
+</head>
+<body>
+<div class="box">
+<h2>Create Account</h2>
+{% if error %}<div class="error">{{ error }}</div>{% endif %}
+<form method="POST">
+<input type="email" name="email" placeholder="Email" required>
+<input type="password" name="password" placeholder="Password" required>
+<button type="submit">REGISTER</button>
+</form>
+<p style="text-align:center;margin-top:10px;">Already have an account? <a href="{{ url_for('login') }}">Login</a></p>
+</div>
+</body>
+</html>
