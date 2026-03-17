@@ -1,0 +1,98 @@
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #101010;
+    color: #f0f0f0;
+}
+
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 30px;
+    background: #1a1a1a;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.5);
+}
+
+.top-bar h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.logout-btn {
+    text-decoration: none;
+    color: #f0f0f0;
+    background: #ff4c4c;
+    padding: 8px 12px;
+    border-radius: 5px;
+    transition: 0.3s;
+}
+
+.logout-btn:hover {
+    background: #ff1c1c;
+}
+
+.container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 30px;
+}
+
+.panel {
+    background: #1e1e1e;
+    border-radius: 10px;
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.panel h2 {
+    margin-bottom: 20px;
+}
+
+.btn {
+    text-decoration: none;
+    background: #00ccff;
+    color: #101010;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.btn:hover {
+    background: #00ffee;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,204,255,0.4);
+}
+.upload-panel {
+    background: #1a1a2e;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+}
+.upload-panel input[type="file"] {
+    margin: 10px 0;
+    padding: 8px;
+}
+.upload-panel button.btn {
+    background: #00ccff;
+    color: black;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+.upload-panel button.btn:hover {
+    background: #42acac;
+}
+.camera-panel { border-top: 4px solid #00ccff; }
+.history-panel { border-top: 4px solid #ffaa00; }
+.alerts-panel { border-top: 4px solid #ff4c4c; }
+.settings-panel { border-top: 4px solid #aa00ff; }
+.about-panel { border-top: 4px solid #00ff66; }
+.upload-panel { border-top: 4px solid #d83692; }
