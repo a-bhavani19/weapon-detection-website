@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Forgot Password</title>
+<style>
+body {
+    margin: 0;
+    height: 100vh;
+    background: radial-gradient(circle at top, #0a0f1c, #020409);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: "Segoe UI", Arial;
+    color: white;
+}
+.box {
+    width: 380px;
+    padding: 40px;
+    background: rgba(15, 25, 45, 0.9);
+    border-radius: 14px;
+    border: 1px solid rgba(0,255,255,0.2);
+    box-shadow: 0 0 40px rgba(0,255,255,0.15);
+}
+input {
+    width: 100%;
+    padding: 14px;
+    margin-bottom: 15px;
+    background: #020815;
+    border: 1px solid #00e5ff33;
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+}
+button {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(90deg, #00e5ff, #00bcd4);
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+}
+button:hover {
+    filter: brightness(1.1);
+}
+.info {
+    text-align: center;
+    color: #00e5ff;
+    margin-bottom: 15px;
+    font-size: 13px;
+}
+</style>
+</head>
+<body>
+<div class="box">
+    <h2>Forgot Password</h2>
+    {% if info %}
+        <div class="info">{{ info }}</div>
+    {% endif %}
+    <form method="POST">
+        <input type="email" name="email" placeholder="Enter your email" required>
+        <button type="submit">Send Reset Link</button>
+    </form>
+</div>
+</body>
+</html>
